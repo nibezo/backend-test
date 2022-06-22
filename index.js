@@ -1,10 +1,10 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import UserModel from './models/user.js'
 import { registerValidation} from './validations/auth.js';
 import { validationResult } from 'express-validator';
-import UserModel from './models/user.js'
-import {password} from './passwords.js'
+import { password } from './passwords.js'
 
 mongoose
     .connect('mongodb+srv://nibezo:' + password + '@cluster0.ociy4ls.mongodb.net/?retryWrites=true&w=majority')
