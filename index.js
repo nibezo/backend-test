@@ -1,9 +1,13 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import { registerValidation} from './validations/auth.js';
+import { validationResult } from 'express-validator';
+import UserModel from './models/user.js'
+import {password} from './passwords.js'
 
 mongoose
-    .connect('mongodb+srv://nibezo:Yyr5kUMh!Kn7J9E@cluster0.ociy4ls.mongodb.net/?retryWrites=true&w=majority')
+    .connect('mongodb+srv://nibezo:' + password + '@cluster0.ociy4ls.mongodb.net/?retryWrites=true&w=majority')
     .then(() => console.log('DB is OK'))
     .catch((err) => console.log('DB error: ', err))
 
@@ -13,21 +17,23 @@ app.get('/', (req, res) => {
     res.send('Hello, world!');
 })
 
-app.post('/auth/login', (req, res) => {
-    console.log(req.body);
+app.post('/auth/register', registerValidation, (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json(errors.array());
+    }
 
-    const token = jwt.sign({
-            email: req.body.email,
-            fullName: 'Вася Пупкин',
-        }, 
-    'secret123',
-    );
+    const doc = new UserModel({
+        email: req.body.email,
+        fullName: req.body.fullName,
+        avatarUrl: req.body.avatar,
+        passwordHash: req.body.avatarUrl,
+    })
 
     res.json({
         success: true,
-        token,
     })
-})
+});
 
 app.listen(4444, (err) => {
     if (err) {
