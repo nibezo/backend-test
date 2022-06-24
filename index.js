@@ -2,10 +2,12 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
-import UserModel from './models/user.js'
+import UserModel from './models/user.js';
+import checkAuth from './utils/checkAuth.js';
 import { registerValidation} from './validations/auth.js';
 import { validationResult } from 'express-validator';
-import { password } from './passwords.js'
+import { password } from './passwords.js';
+
 
 mongoose
     .connect('mongodb+srv://nibezo:' + password + '@cluster0.ociy4ls.mongodb.net/blog?retryWrites=true&w=majority')
@@ -14,26 +16,23 @@ mongoose
 
 const app = express();
 app.use(express.json());
-// app.get('/', (req, res) => {
-//     res.send('Hello, world!');
-// })
-
 app.post('/auth/login', async (req, res) => {
     try {
-        const user = await UserModel.findOne({ email: req.body.email }); 
+        const user = await UserModel.findOne({ email: req.body.email });
+
         if (!user) {
             return res.status(404).json({
-                message: 'User do not found',
+                message: "User not found!",
             })
         };
 
         const isValidPass = await bcrypt.compare(req.body.password, user._doc.passwordHash);
-        if (!isValidPass) {
-            return res.status(404).json({
-                message: 'Password or login incorrect',
-            })
-        };
         
+        if (!isValidPass) {
+            return res.status(403).json({
+                message: "Password don't correct!!",
+            })            
+        };
         const token = jwt.sign({
             _id: user._id,
         },
@@ -51,11 +50,11 @@ app.post('/auth/login', async (req, res) => {
     } catch (err) {
         console.log(err);
         res.status(500).json({
-            message: 'Sorry, we can not auth you',
+            message: 'Sorry, we can not auth you!',
 
-        })
-    }
-})
+        });
+    };
+});
 
 app.post('/auth/register', registerValidation, async (req, res) => {
     try {
@@ -63,7 +62,7 @@ app.post('/auth/register', registerValidation, async (req, res) => {
         if (!errors.isEmpty()) {
             return res.status(400).json(errors.array());
         }
-        const pass = req.params.password;
+        const password = req.body.password;
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(password, salt);
     
@@ -71,7 +70,7 @@ app.post('/auth/register', registerValidation, async (req, res) => {
             email: req.body.email,
             fullName: req.body.fullName,
             avatarUrl: req.body.avatar,
-            passwordHash: hash,
+            passwordHash,
         })
         const user = await doc.save();
 
@@ -97,6 +96,12 @@ app.post('/auth/register', registerValidation, async (req, res) => {
 
         })
     }
+});
+
+app.get('/auth/me', checkAuth, (req, res) => {
+    try {
+
+    } catch (err) {}
 });
 
 app.listen(4444, (err) => {
